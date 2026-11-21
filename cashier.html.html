@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>كاشير Hamborghini - برجر • كار</title>
+  <style>
+    * { box-sizing: border-box; font-family: Tahoma, Arial, sans-serif; }
+    body { margin: 0; background: #141414; color: #fff; }
+    header {
+      background: linear-gradient(90deg, #1f1a0c, #3b2c08);
+      border-bottom: 2px solid #f5b700;
+      padding: 12px 16px;
+      display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px;
+    }
+    .brand h1 { margin: 0; font-size: 20px; color: #ffcc29; }
+    .brand small { color: #ddd; }
+    .top-actions button {
+      background: #262626; color: #ffcc29; border: 1px solid #f5b700;
+      padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold;
+    }
+    .container { display: grid; grid-template-columns: 1.6fr 1fr; gap: 14px; padding: 14px; }
+    @media (max-width: 900px) { .container { grid-template-columns: 1fr; } }
+    .panel { background: #1e1e1e; border: 1px solid #333; border-radius: 12px; padding: 14px; }
+    .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+    .tab {
+      background: #2b2b2b; color: #fff; border: none; padding: 9px 14px;
+      border-radius: 8px; cursor: pointer; font-weight: bold;
+    }
+    .tab.active { background: #f5b700; color: #111; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 10px; }
+    .item-card {
+      background: #272727; border: 1px solid #3b3b3b; border-radius: 10px;
+      padding: 10px; display: flex; flex-direction: column; justify-content: space-between; gap: 8px;
+    }
+    .item-name { font-weight: bold; font-size: 14px; color: #fff; }
+    .size-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+    .add-btn {
+      flex: 1; background: #f5b700; color: #111; border: none; border-radius: 7px;
+      padding: 7px 6px; font-weight: bold; cursor: pointer; font-size: 12px;
+    }
+    .add-btn:hover { background: #ffcf40; }
+    .order-list { max-height: 290px; overflow-y: auto; margin: 10px 0; border-top: 1px solid #333; border-bottom: 1px solid #333; padding: 8px 0; }
+    .order-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 6px 4px; border-bottom: 1px dashed #333; font-size: 13px; gap: 6px;
+    }
+    .qty-ctrl button {
+      background: #383838; color: #fff; border: none; width: 24px; height: 24px;
+      border-radius: 5px; cursor: pointer; font-weight: bold;
+    }
+    .field { width: 100%; padding: 8px 10px; margin-top: 6px; border-radius: 8px; border: 1px solid #444; background: #141414; color: #fff; }
+    .summary-line { display: flex; justify-content: space-between; margin: 6px 0; font-size: 15px; }
+    .total { font-size: 19px; font-weight: bold; color: #ffcc29; }
+    .checkout-btns { display: flex; gap: 8px; margin-top: 10px; }
+    .btn-confirm { flex: 2; background: #22a04b; color: #fff; border: none; padding: 11px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+    .btn-clear { flex: 1; background: #9e2a2b; color: #fff; border: none; padding: 11px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+    .history-box { margin-top: 14px; background: #181818; border: 1px solid #333; border-radius: 10px; padding: 10px; font-size: 13px; display: none; }
+    .history-box.show { display: block; }
+    @media print {
+      body { background: #fff; color: #000; }
+      header, .menu-panel, .no-print { display: none !important; }
+      .panel { border: none; background: #fff; color: #000; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <h1>Hamborghini — برجر • كار</h1>
+      <small>دوران النادي بجوار كريب آند وافل • 01067491239</small>
+    </div>
+    <div class="top-actions">
+      <button onclick="toggleReport()">تقفيل الوردية / السجل</button>
+      <button onclick="resetShift()">بدء وردية جديدة</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="panel menu-panel">
+      <div class="tabs" id="tabs"></div>
+      <div class="grid" id="menuGrid"></div>
+    </div>
+
+    <div class="panel">
+      <h2 style="margin:0 0 6px; color:#ffcc29; font-size:18px;">طلب تيك أواي #<span id="orderNum">1</span></h2>
+      <input id="customerNote" class="field no-print" type="text" placeholder="اسم العميل أو ملاحظات (مثال: بدون هلابينو، زيادة صوص)" />
+
+      <div class="order-list" id="orderList">
+        <div style="color:#aaa; text-align:center; padding:20px;">لم يتم إضافة أصناف بعد</div>
+      </div>
+
+      <div class="summary-line total">
+        <span>الإجمالي:</span>
+        <span><span id="totalAmount">0</span> ج</span>
+      </div>
+
+      <div class="no-print">
+        <input id="paidAmount" class="field" type="number" min="0" placeholder="المبلغ المدفوع من العميل (ج)" oninput="calcChange()" />
+        <div class="summary-line">
+          <span>الباقي للعميل:</span>
+          <strong><span id="changeAmount">0</span> ج</strong>
+        </div>
+      </div>
+
+      <div class="checkout-btns no-print">
+        <button class="btn-confirm" onclick="completeOrder()">تأكيد الطلب وحفظه</button>
+        <button class="btn-clear" onclick="clearOrder()">مسح</button>
+      </div>
+      <button class="tab no-print" style="width:100%; margin-top:8px;" onclick="window.print()">طباعة الفاتورة / ملخص التحضير</button>
+
+      <div class="history-box" id="reportBox"></div>
+    </div>
+  </div>
+
+  <script>
+    const MENU = {
+      "برجر لحم": [
+        { name: "كلاسيك تشيز برجر", single: 110, double: 145 },
+        { name: "سموكي تشيز برجر", single: 120, double: 155 },
+        { name: "بيف بيكون تشيز برجر", single: 125, double: 160 },
+        { name: "رينجز تشيز برجر", single: 130, double: 165 },
+        { name: "ستيكس تشيز برجر", single: 125, double: 160 },
+        { name: "مشروم تشيز برجر", single: 130, double: 165 },
+        { name: "سبايسي هلابينو تشيز برجر", single: 125, double: 160 }
+      ],
+      "فراخ": [
+        { name: "كريسبي تشيكن", single: 100 },
+        { name: "تركي تشيكن", single: 120 },
+        { name: "جريلد تشيكن", single: 95 },
+        { name: "زنجر تشيكن", single: 110 },
+        { name: "كوردون بلو", single: 110 }
+      ],
+      "المقبلات": [
+        { name: "موتزاريلا ستيكس", single: 50 },
+        { name: "لوديد فرايز", single: 85 },
+        { name: "بطاطس مقلية", single: 40 },
+        { name: "حلقات بصل", single: 40 },
+        { name: "ساندوتش بطاطس", single: 40 },
+        { name: "مكس تشيز فرايز", single: 55 },
+        { name: "كريسبي فرايز", single: 75 }
+      ],
+      "إضافات": [
+        { name: "صوص جبنة", single: 30 },
+        { name: "مشروم", single: 20 },
+        { name: "بيف بيكون", single: 30 },
+        { name: "سموكي تركي", single: 20 },
+        { name: "هلابينو", single: 15 },
+        { name: "صوصات", single: 30 }
+      ]
+    };
+
+    let activeCat = Object.keys(MENU)[0];
+    let cart = [];
+    let shiftData = JSON.parse(localStorage.getItem("hamborghini_shift") || '{"orders":[],"counter":1}');
+
+    function saveShift() {
+      localStorage.setItem("hamborghini_shift", JSON.stringify(shiftData));
+    }
+
+    function renderTabs() {
+      const tabsEl = document.getElementById("tabs");
+      tabsEl.innerHTML = "";
+      Object.keys(MENU).forEach(cat => {
+        const b = document.createElement("button");
+        b.className = "tab" + (cat === activeCat ? " active" : "");
+        b.textContent = cat;
+        b.onclick = () => { activeCat = cat; renderTabs(); renderMenu(); };
+        tabsEl.appendChild(b);
+      });
+    }
+
+    function renderMenu() {
+      const grid = document.getElementById("menuGrid");
+      grid.innerHTML = "";
+      MENU[activeCat].forEach(item => {
+        const card = document.createElement("div");
+        card.className = "item-card";
+        let btns = `<button class="add-btn" onclick="addItem('${item.name} (${activeCat === "برجر لحم" ? "سنجل" : ""})'.replace(' ()',''), ${item.single})">${activeCat === "برجر لحم" ? "سنجل " : ""}${item.single} ج</button>`;
+        if (item.double) {
+          btns += `<button class="add-btn" onclick="addItem('${item.name} (دبل)', ${item.double})">دبل ${item.double} ج</button>`;
+        }
+        card.innerHTML = `<div class="item-name">${item.name}</div><div class="size-btns">${btns}</div>`;
+        grid.appendChild(card);
+      });
+    }
+
+    function addItem(label, price) {
+      const found = cart.find(x => x.label === label);
+      if (found) found.qty += 1;
+      else cart.push({ label, price, qty: 1 });
+      renderCart();
+    }
+
+    function changeQty(idx, delta) {
+      cart[idx].qty += delta;
+      if (cart[idx].qty <= 0) cart.splice(idx, 1);
+      renderCart();
+    }
+
+    function getTotal() {
+      return cart.reduce((sum, x) => sum + x.price * x.qty, 0);
+    }
+
+    function renderCart() {
+      document.getElementById("orderNum").textContent = shiftData.counter;
+      const list = document.getElementById("orderList");
+      if (!cart.length) {
+        list.innerHTML = '<div style="color:#aaa; text-align:center; padding:20px;">لم يتم إضافة أصناف بعد</div>';
+      } else {
+        list.innerHTML = cart.map((x, i) => `
+          <div class="order-row">
+            <div><strong>${x.label}</strong><br><small>${x.price} ج × ${x.qty} = ${x.price * x.qty} ج</small></div>
+            <div class="qty-ctrl">
+              <button onclick="changeQty(${i}, -1)">-</button>
+              <span style="margin:0 6px;">${x.qty}</span>
+              <button onclick="changeQty(${i}, 1)">+</button>
+            </div>
+          </div>
+        `).join("");
+      }
+      document.getElementById("totalAmount").textContent = getTotal();
+      calcChange();
+    }
+
+    function calcChange() {
+      const paid = parseFloat(document.getElementById("paidAmount").value || 0);
+      const total = getTotal();
+      const diff = paid > 0 ? Math.max(0, paid - total) : 0;
+      document.getElementById("changeAmount").textContent = diff;
+    }
+
+    function clearOrder() {
+      cart = [];
+      document.getElementById("customerNote").value = "";
+      document.getElementById("paidAmount").value = "";
+      renderCart();
+    }
+
+    function completeOrder() {
+      if (!cart.length) return alert("أضف صنفاً واحداً على الأقل أولاً.");
+      const total = getTotal();
+      const note = document.getElementById("customerNote").value.trim();
+      const time = new Date().toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" });
+      shiftData.orders.push({
+        num: shiftData.counter,
+        time,
+        note,
+        total,
+        items: cart.map(x => `${x.qty}× ${x.label}`)
+      });
+      shiftData.counter += 1;
+      saveShift();
+      alert(`تم حفظ الطلب #${shiftData.counter - 1} بإجمالي ${total} ج`);
+      clearOrder();
+      renderReport();
+    }
+
+    function renderReport() {
+      const box = document.getElementById("reportBox");
+      const sum = shiftData.orders.reduce((s, o) => s + o.total, 0);
+      box.innerHTML = `
+        <strong>ملخص الوردية:</strong> عدد الطلبات: ${shiftData.orders.length} | إجمالي المبيعات: <strong>${sum} ج</strong>
+        <hr style="border-color:#333;">
+        ${shiftData.orders.slice().reverse().map(o => `
+          <div style="margin-bottom:6px;">
+            <strong>#${o.num}</strong> (${o.time}) — <strong>${o.total} ج</strong>${o.note ? ` — <em>${o.note}</em>` : ""}<br>
+            <small style="color:#ccc;">${o.items.join(" ، ")}</small>
+          </div>
+        `).join("") || "لا توجد طلبات مسجلة في الوردية الحالية."}
+      `;
+    }
+
+    function toggleReport() {
+      renderReport();
+      document.getElementById("reportBox").classList.toggle("show");
+    }
+
+    function resetShift() {
+      if (!confirm("هل تريد تصفير بيانات الوردية الحالية وبدء وردية جديدة من رقم 1؟")) return;
+      shiftData = { orders: [], counter: 1 };
+      saveShift();
+      renderCart();
+      renderReport();
+    }
+
+    renderTabs();
+    renderMenu();
+    renderCart();
+  </script>
+</body>
+</html>
